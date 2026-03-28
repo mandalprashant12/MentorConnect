@@ -1,27 +1,64 @@
-import React, { useState } from 'react';
-import './App.css';
-import InterestSelector from './InterestSelector';
+"use client";
 
-export default function Forms({ role }) {
-  const [department, setDepartment] = useState('CSE');
-  const [year, setYear] = useState('1');
-  const [interests, setInterests] = useState(['Career guidance']);
-  const [languages, setLanguages] = useState('1');
+import React, { useState } from "react";
+import InterestSelector from "./interest-selector";
 
-  const handleSubmit = (e) => {
+interface ProfileFormProps {
+  role: string;
+  onBack: () => void;
+}
+
+export default function ProfileForm({ role, onBack }: ProfileFormProps) {
+  const [department, setDepartment] = useState("CSE");
+  const [year, setYear] = useState("1");
+  const [interests, setInterests] = useState(["Career guidance"]);
+  const [languages, setLanguages] = useState("1");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const formData = { role, department, year, interests, languages };
-    console.log("Form submitted with data:", formData);
+    console.log("Profile submitted:", formData);
+    // TODO: save profile to Supabase
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }, 1000);
   };
+
+  if (submitted) {
+    return (
+      <div className="form-container text-center">
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
+        <h2 className="form-title">Profile Created!</h2>
+        <p className="form-subtitle">
+          Welcome to MentorConnect. You&apos;re all set as a <strong>{role}</strong>.
+        </p>
+        <a href="/protected" className="button" style={{ display: "inline-block", marginTop: "24px", textDecoration: "none" }}>
+          Go to Dashboard
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="form-container">
+      <div
+        onClick={onBack}
+        style={{ cursor: "pointer", color: "#aaaaaa", fontSize: "14px", marginBottom: "20px" }}
+      >
+        &lt; Back to roles
+      </div>
+
       <h2 className="form-title">Create Profile</h2>
-      <p className="form-subtitle">You're signing up as a <strong>{role}</strong></p>
+      <p className="form-subtitle">
+        You&apos;re signing up as a <strong>{role}</strong>
+      </p>
 
       <form onSubmit={handleSubmit} className="profile-form">
-
-        {/* --- GENERAL FIELDS --- */}
+        {/* GENERAL FIELDS */}
         <div className="form-row">
           <div className="form-group">
             <label className="label">Department / branch</label>
@@ -30,11 +67,11 @@ export default function Forms({ role }) {
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
             >
-              <option value="CSE"    style={{ backgroundColor: '#f5f3f5', color: '#30034c' }}>CSE</option>
-              <option value="ECE"    style={{ backgroundColor: '#f5f3f5', color: '#30034c' }}>ECE</option>
-              <option value="ME"     style={{ backgroundColor: '#f5f3f5', color: '#30034c' }}>ME</option>
-              <option value="SM"     style={{ backgroundColor: '#f5f3f5', color: '#30034c' }}>SM</option>
-              <option value="DESIGN" style={{ backgroundColor: '#f5f3f5', color: '#30034c' }}>Design</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="ME">ME</option>
+              <option value="SM">SM</option>
+              <option value="DESIGN">Design</option>
             </select>
           </div>
 
@@ -67,29 +104,23 @@ export default function Forms({ role }) {
               <option value="4">Tamil</option>
             </select>
           </div>
-          
-          <div className="form-group" /> 
+          <div className="form-group" />
         </div>
 
         <div className="form-group form-group--full">
-          <InterestSelector
-            selectedInterests={interests}
-            onChange={setInterests}
-          />
+          <InterestSelector selectedInterests={interests} onChange={setInterests} />
         </div>
 
         <div className="form-group form-group--full">
           <label className="label">Short bio</label>
           <textarea
             className="form-control"
-            rows="3"
+            rows={3}
             placeholder="Tell us a bit about yourself..."
-          ></textarea>
+          />
         </div>
 
-        {/* --- ROLE SPECIFIC CONDITIONAL FIELDS --- */}
-        
-        {/*Mentee */}
+        {/* ROLE SPECIFIC FIELDS */}
         {role === "mentee" && (
           <div className="form-row">
             <div className="form-group">
@@ -111,7 +142,6 @@ export default function Forms({ role }) {
           </div>
         )}
 
-        {/* Peer mentor or Senior peer mentor */}
         {(role === "peer" || role === "senior") && (
           <div className="form-row">
             <div className="form-group">
@@ -129,7 +159,6 @@ export default function Forms({ role }) {
           </div>
         )}
 
-        {/* Professional mentor */}
         {role === "professional" && (
           <div className="form-row">
             <div className="form-group">
@@ -140,7 +169,6 @@ export default function Forms({ role }) {
               <label className="label">Years of experience</label>
               <input type="number" className="form-control" placeholder="E.g., 3" />
             </div>
-            
             <div className="form-group form-group--full">
               <label className="label">Specialization areas</label>
               <input type="text" className="form-control" placeholder="E.g., UI/UX, Cloud Architecture" />
@@ -148,10 +176,9 @@ export default function Forms({ role }) {
           </div>
         )}
 
-        <button type="submit" className="submit-btn">
-          Save Profile
+        <button type="submit" className="submit-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Profile"}
         </button>
-
       </form>
     </div>
   );

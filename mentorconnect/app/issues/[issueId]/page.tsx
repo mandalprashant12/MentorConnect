@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { CommentSection } from "../components/CommentSection";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function IssuePage({
   params,
@@ -40,9 +41,12 @@ export default async function IssuePage({
 
         <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6">Comments</h2>
-          <CommentSection issueId={issueId} />
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading comments...</p>}>
+            <CommentSection issueId={issueId} />
+          </Suspense>
         </div>
       </div>
     </div>
   );
 }
+

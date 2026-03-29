@@ -1,13 +1,7 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AuthButton } from "@/components/auth-button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export default function Home() {
   return (
@@ -15,41 +9,42 @@ export default function Home() {
       <div className="flex-1 w-full flex flex-col gap-20 items-center">
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
+            <div className="flex gap-5 items-center font-semibold text-white">
+              <Link href={"/"}>MentorConnect</Link>
             </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
+            <Suspense>
+              <AuthButton />
+            </Suspense>
           </div>
         </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <Hero />
-          <main className="flex-1 flex flex-col gap-6 px-4">
-            <h2 className="font-medium text-xl mb-4">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
+
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 max-w-3xl p-5 text-center">
+          <h1 className="text-5xl font-bold text-white">
+            Connect. Learn. Grow.
+          </h1>
+          <p className="text-lg text-gray-300 max-w-xl">
+            MentorConnect bridges students with the right mentors — whether
+            you&apos;re looking for academic help, career guidance, or personal growth.
+          </p>
+          <div className="flex gap-4 flex-wrap justify-center">
+            <Link
+              href="/auth/sign-up"
+              className="px-8 py-3 rounded-lg font-semibold text-white transition-all"
+              style={{ backgroundColor: "#9358be" }}
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/auth/login"
+              className="px-8 py-3 rounded-lg font-semibold border border-white/30 text-white backdrop-blur-sm hover:bg-white/10 transition-all"
+            >
+              Log In
+            </Link>
+          </div>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
+        <footer className="w-full flex items-center justify-center border-t border-white/10 mx-auto text-center text-xs gap-8 py-8 text-gray-400">
+          <p>MentorConnect &copy; {new Date().getFullYear()}</p>
           <ThemeSwitcher />
         </footer>
       </div>

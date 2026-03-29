@@ -1,27 +1,33 @@
-import React from 'react';
-import './InterestSelector.css';
+"use client";
+
+import React from "react";
 
 const INTEREST_OPTIONS = [
-  'Academics',
-  'Career guidance',
-  'Mental health',
-  'Research',
-  'Placements',
-  'Entrepreneurship',
-  'Soft skills'
+  "Academics",
+  "Career guidance",
+  "Mental health",
+  "Research",
+  "Placements",
+  "Entrepreneurship",
+  "Soft skills",
 ];
 
+interface InterestSelectorProps {
+  selectedInterests: string[];
+  onChange: (interests: string[]) => void;
+}
 
-export default function InterestSelector({ selectedInterests, onChange }) {
-  
-  const toggleInterest = (interest) => {
-    let updatedInterests;
+export default function InterestSelector({
+  selectedInterests,
+  onChange,
+}: InterestSelectorProps) {
+  const toggleInterest = (interest: string) => {
+    let updatedInterests: string[];
     if (selectedInterests.includes(interest)) {
       updatedInterests = selectedInterests.filter((item) => item !== interest);
     } else {
       updatedInterests = [...selectedInterests, interest];
     }
-   
     onChange(updatedInterests);
   };
 
@@ -34,8 +40,8 @@ export default function InterestSelector({ selectedInterests, onChange }) {
           return (
             <button
               key={interest}
-              type="button" 
-              className={`chip ${isSelected ? 'selected' : ''}`}
+              type="button"
+              className={`chip ${isSelected ? "selected" : ""}`}
               onClick={() => toggleInterest(interest)}
             >
               {interest}

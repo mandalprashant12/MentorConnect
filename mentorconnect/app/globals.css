@@ -2,8 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   CSS Custom Properties — required by shadcn/ui Tailwind theme
+   (Card, Button, Input, Label etc. all reference these vars)
+   ============================================================ */
 @layer base {
   :root {
+    /* ── Light mode (fallback — app uses dark bg image, dark effectively) */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -30,35 +35,35 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
+  /* ── Dark mode CSS vars (applied by next-themes via class="dark") */
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 270 15% 8%;
+    --foreground: 0 0% 95%;
+    --card: 270 12% 11%;
+    --card-foreground: 0 0% 95%;
+    --popover: 270 12% 11%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 285 45% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 270 10% 18%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 270 10% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 270 10% 22%;
+    --accent-foreground: 0 0% 90%;
+    --destructive: 0 62.8% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --border: 270 10% 22%;
+    --input: 270 10% 22%;
+    --ring: 285 45% 55%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -68,7 +73,7 @@
 }
 
 /* ============================================================
-   MentorConnect — migrated from src/App.css & InterestSelector.css
+   MentorConnect — Global App Styles
    ============================================================ */
 
 body {
@@ -86,6 +91,7 @@ body {
   100% { background-size: 105%; }
 }
 
+/* ── Auth page centering wrapper ── */
 #center {
   min-height: 100vh;
   display: flex;
@@ -93,6 +99,7 @@ body {
   align-items: center;
 }
 
+/* ── Glassmorphism card used on sign-up / login steps ── */
 .form {
   background: transparent;
   padding: 48px 40px;
@@ -100,17 +107,11 @@ body {
   width: 420px;
   max-width: 95vw;
   outline: none;
-  border: 2px solid rgba(255,255,255,.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(30px);
 }
 
-.form .form-title {
-  font-size: 26px;
-  padding-bottom: 20px;
-  font-weight: 700;
-  color: #8d28a6;
-}
-
+/* ── Titles & subtitles — single unified definition ── */
 .form-title {
   font-size: 26px;
   font-weight: 700;
@@ -124,12 +125,7 @@ body {
   margin-bottom: 32px;
 }
 
-.elements {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20px;
-}
-
+/* ── Labels ── */
 .label {
   font-size: 13px;
   font-weight: 500;
@@ -137,14 +133,15 @@ body {
   margin-bottom: 6px;
 }
 
+/* ── All native inputs/textareas/selects (global baseline) ── */
 input,
 textarea,
 select {
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   padding: 11px 14px;
   color: #f0f0f0;
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.1);
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
@@ -159,7 +156,7 @@ select:focus {
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 select option {
@@ -167,12 +164,7 @@ select option {
   color: #e8e8e8;
 }
 
-.remember-me label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
+/* ── Remember me / link row ── */
 .remember-me {
   display: flex;
   justify-content: space-between;
@@ -180,6 +172,12 @@ select option {
   color: #888888;
   font-size: 13px;
   margin-bottom: 20px;
+}
+.remember-me label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
 }
 .remember-me a {
   color: #9358be;
@@ -190,7 +188,13 @@ select option {
   text-decoration: underline;
 }
 
-.button {
+/* ── Primary action button — used everywhere ──
+   .button   → <a> / generic elements
+   .submit-btn → <button type="submit"> in profile-form
+   Both share identical styling for consistency.           ── */
+.button,
+.submit-btn {
+  display: block;
   width: 100%;
   padding: 12px;
   background-color: #9358be;
@@ -203,12 +207,18 @@ select option {
   margin-top: 8px;
   transition: background-color 0.2s;
   text-align: center;
+  text-decoration: none;
 }
-.button:hover {
+.button:hover,
+.submit-btn:hover:not(:disabled) {
   background-color: #7d3fa8;
 }
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-/* --- Role Selection Grid --- */
+/* ── Role selection grid ── */
 .roles-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -218,7 +228,7 @@ select option {
 
 .role-tile {
   background-color: rgba(241, 210, 234, 0.15);
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 16px;
   text-align: left;
@@ -241,7 +251,7 @@ select option {
   font-size: 12px;
 }
 
-/* --- Profile Form --- */
+/* ── Profile form layout ── */
 .form-container {
   width: 100%;
 }
@@ -270,12 +280,15 @@ select option {
   flex-basis: 100%;
 }
 
+/* ── .form-control — explicit class for profile-form inputs ──
+   Inherits the same visual style as the bare input/select/textarea
+   above. Width is NOT forced to 100% here since flex layout handles it. ── */
 .form-control {
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   padding: 11px 14px;
   color: #f0f0f0;
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.1);
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
@@ -284,28 +297,7 @@ select option {
   border-color: #9358be;
 }
 
-.submit-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #9358be;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: background-color 0.2s;
-}
-.submit-btn:hover:not(:disabled) {
-  background-color: #7d3fa8;
-}
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* --- Interest Selector --- */
+/* ── Interest selector chips ── */
 .interest-container {
   background-color: rgba(245, 243, 245, 0.08);
   padding: 16px;
@@ -333,6 +325,7 @@ select option {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  width: auto; /* override the bare `input` width: 100% rule */
 }
 .chip:hover {
   background-color: rgba(192, 132, 252, 0.1);

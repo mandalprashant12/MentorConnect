@@ -142,6 +142,9 @@ function ProfileMenu({ userEmail }: { userEmail?: string }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link href="/profile">Profile</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href="/protected">Dashboard</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

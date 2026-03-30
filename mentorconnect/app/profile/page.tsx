@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import {
   Card,
   CardContent,
@@ -8,8 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Building2, GraduationCap, Shield, Calendar } from "lucide-react";
+import { Mail, Building2, GraduationCap, Shield, Calendar } from "lucide-react";
 import { TriggerMatchingButton } from "@/components/trigger-matching-button";
+
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    return null;
+  }
+
+  return createSupabaseAdminClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -21,31 +35,101 @@ export default async function ProfilePage() {
     return redirect("/auth/login");
   }
 
+  const authUserId = user.id;
+
   // Fetch user record from custom users table
-  const { data: dbUser } = await supabase
+  let { data: dbUser } = await supabase
     .from("users")
     .select("id, email, status, onboarding_status, created_at, last_login_at")
-    .eq("id", user.id)
-    .single();
+    .eq("id", authUserId)
+    .maybeSingle();
+
+  if (!dbUser && user.email) {
+    const { data: dbUserByEmail } = await supabase
+      .from("users")
+      .select("id, email, status, onboarding_status, created_at, last_login_at")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    dbUser = dbUserByEmail;
+  }
+
+  const resolvedUserId = dbUser?.id ?? authUserId;
 
   // Fetch user profile
-  const { data: profile } = await supabase
+  let { data: profileData } = await supabase
     .from("user_profiles")
     .select("full_name, college_email, department, year_or_designation, short_bio, is_complete")
-    .eq("user_id", user.id)
-    .single();
+    .eq("user_id", resolvedUserId)
+    .maybeSingle();
+
+  if (!profileData && user.email) {
+    const { data: profileByEmail } = await supabase
+      .from("user_profiles")
+      .select("full_name, college_email, department, year_or_designation, short_bio, is_complete")
+      .eq("college_email", user.email)
+      .maybeSingle();
+
+    profileData = profileByEmail;
+  }
+
+  let profile = profileData;
+
+  if (!profile) {
+    const fallbackName =
+      user.user_metadata?.full_name ??
+      user.email?.split("@")[0]?.replace(/[._-]+/g, " ") ??
+      "New Student";
+
+    const { error: bootstrapError } = await supabase.from("user_profiles").upsert(
+      {
+        user_id: authUserId,
+        full_name: fallbackName,
+        college_email: user.email ?? `${user.id}@mentorconnect.local`,
+        department: "Not Specified",
+        year_or_designation: "Not Specified",
+        short_bio: null,
+        is_complete: false,
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (!bootstrapError) {
+      const { data: bootstrappedProfile } = await supabase
+        .from("user_profiles")
+        .select("full_name, college_email, department, year_or_designation, short_bio, is_complete")
+        .eq("user_id", authUserId)
+        .maybeSingle();
+
+      profile = bootstrappedProfile;
+    }
+  }
+
+  if (!profile && user.email) {
+    const adminClient = getAdminClient();
+
+    if (adminClient) {
+      const { data: adminProfileByEmail } = await adminClient
+        .from("user_profiles")
+        .select("full_name, college_email, department, year_or_designation, short_bio, is_complete")
+        .eq("college_email", user.email)
+        .maybeSingle();
+
+      profile = adminProfileByEmail;
+    }
+  }
 
   // Fetch user roles
   const { data: userRoles } = await supabase
     .from("user_roles")
     .select("role_id, is_active, roles ( display_title )")
-    .eq("user_id", user.id);
+    .eq("user_id", resolvedUserId);
 
   // Fetch user interests
   const { data: userInterests } = await supabase
     .from("user_interests")
     .select("interest_tags ( name, category )")
-    .eq("user_id", user.id);
+    .eq("user_id", resolvedUserId);
 
   const roles = (userRoles ?? []).map((r) => ({
     title: (r.roles as unknown as { display_title: string })?.display_title ?? "Unknown",
@@ -67,7 +151,7 @@ export default async function ProfilePage() {
     <div className="container mx-auto py-8 max-w-3xl space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
 
-      <TriggerMatchingButton userId={user.id} />
+      <TriggerMatchingButton userId={resolvedUserId} />
 
       {/* User Info Card */}
       <Card>

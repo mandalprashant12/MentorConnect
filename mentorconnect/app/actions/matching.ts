@@ -3,11 +3,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateMatchMatches, MenteeProfile, MentorProfile } from "@/lib/matchingEngine";
 
+type LanguageJoin = { code?: string } | Array<{ code?: string }> | null;
+type UserLanguageRow = { user_id?: string; languages?: LanguageJoin };
+type UserTagRow = { user_id?: string; tag_id?: number };
+
 export async function runMatchingAlgorithm(menteeId: string) {
   const supabase = await createClient();
 
   // 1. Fetch Mentee Profile details
-  const { data: menteeData, error: menteeError } = await supabase
+  const { data: menteeRows, error: menteeError } = await supabase
     .from("mentee_profiles")
     .select(`
       user_id,
@@ -16,18 +20,30 @@ export async function runMatchingAlgorithm(menteeId: string) {
       preferred_mentor_domain
     `)
     .eq("user_id", menteeId)
-    .single();
+    .limit(1);
+
+  const menteeData = menteeRows?.[0] ?? null;
 
   if (menteeError || !menteeData) {
-    throw new Error("Failed to fetch mentee profile: " + menteeError?.message);
+    throw new Error(
+      menteeError?.message
+        ? "Failed to fetch mentee profile: " + menteeError.message
+        : "No mentee profile found for this user. Complete mentee onboarding first."
+    );
   }
 
   // Fetch mentee's general profile (for department)
-  const { data: menteeProfileData } = await supabase
+  const { data: menteeProfileRows, error: menteeProfileError } = await supabase
     .from("user_profiles")
     .select("department")
     .eq("user_id", menteeId)
-    .single();
+    .limit(1);
+
+  if (menteeProfileError) {
+    throw new Error("Failed to fetch user profile: " + menteeProfileError.message);
+  }
+
+  const menteeProfileData = menteeProfileRows?.[0] ?? null;
 
   // 2. Fetch Mentee Attributes (Languages & Interests)
   const [{ data: menteeLangs }, { data: menteeTags }] = await Promise.all([
@@ -35,7 +51,16 @@ export async function runMatchingAlgorithm(menteeId: string) {
     supabase.from("user_interests").select("tag_id").eq("user_id", menteeId)
   ]);
 
-  const menteeLanguages = (menteeLangs || []).map((l: any) => l.languages.code as string);
+  const menteeLanguages = (menteeLangs || [])
+    .map((entry) => {
+      const row = entry as UserLanguageRow;
+      if (!row.languages) return null;
+      if (Array.isArray(row.languages)) {
+        return row.languages[0]?.code ?? null;
+      }
+      return row.languages.code ?? null;
+    })
+    .filter((language): language is string => Boolean(language));
   const menteeInterests = (menteeTags || []).map((t) => t.tag_id as number);
 
   // Reconstruct Mentee
@@ -98,7 +123,8 @@ export async function runMatchingAlgorithm(menteeId: string) {
 
   // Populate Languages
   for (const item of (mentorLangs || [])) {
-    const lang = item as any;
+    const lang = item as UserLanguageRow;
+    if (!lang.user_id) continue;
     const prof = mentorsMap.get(lang.user_id);
     if (prof && lang.languages?.code) {
         prof.languages.push(lang.languages.code);
@@ -109,7 +135,8 @@ export async function runMatchingAlgorithm(menteeId: string) {
 
   // Populate Tags
   for (const item of (mentorTags || [])) {
-    const tag = item as any;
+    const tag = item as UserTagRow;
+    if (!tag.user_id || typeof tag.tag_id !== "number") continue;
     const prof = mentorsMap.get(tag.user_id);
     if (prof) {
         prof.interests.push(tag.tag_id);

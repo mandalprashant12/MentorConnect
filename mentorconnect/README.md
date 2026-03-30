@@ -1,109 +1,78 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 🎓 MentorConnect
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+**MentorConnect** is a comprehensive, smart mentoring platform designed to bridge the gap between junior students and experienced mentors (peers, seniors, and professionals). Built with a focus on personalized matching and efficient issue resolution, it ensures every student gets the guidance they need to succeed academically and personally.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 🚀 Key Features
 
-## Features
+### 🧠 Smart Demographic Matching
+Our proprietary matching engine pairs mentees with the most suitable mentors using a weighted scoring algorithm (0.0 - 1.0) based on:
+- **Academic Background (30%)**: PCM, PCB, Commerce, Arts, etc.
+- **Mentoring Domains (25%)**: Academics, Career, Mental Health, etc.
+- **Language Compatibility (20%)**: Multi-language support (English, Hindi, etc.).
+- **Department Similarity (15%)**: Connecting students within the same college branch.
+- **Shared Interests (10%)**: Matching based on hobbies and technical interests.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### 📝 Integrated Issue Tracking
+A built-in system for mentees to raise challenges and for mentors to provide solutions:
+- **Categorized Issues**: Academic, Career, Personal, etc.
+- **Visibility Levels**: Public, Private, and Ultra-Private for sensitive matters.
+- **Threaded Discussions**: Collaborative problem-solving with nested comments.
+- **Resolution Tracking**: Formal closing of issues with mentor attribution.
 
-## Demo
+### 👥 Diverse Mentor Roles
+- **Peer Mentors**: 2nd-year undergraduates helping freshers.
+- **Senior Mentors**: 3rd/4th-year undergraduates providing advanced guidance.
+- **Postgraduate Mentors**: M.Tech / PhD scholars for specialized research advice.
+- **Professional Counsellors**: Certified experts for mental health and career crisis management.
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### 🔒 Privacy & Security
+- **Ultra-Private Mode**: High-sensitivity issues are auto-escalated to professional counsellors.
+- **Audit Logging**: Every sensitive action is logged for accountability.
+- **Anonymous Posting**: Mentees can ask questions without revealing their identity.
 
-## Deploy to Vercel
+---
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## 🛠️ Tech Stack
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+- **Frontend**: [Next.js 15](https://nextjs.org/) (App Router), [Tailwind CSS](https://tailwindcss.com), [Framer Motion](https://www.framer.com/motion/)
+- **Backend & Auth**: [Supabase](https://supabase.com/) (PostgreSQL, Realtime, SSR)
+- **UI Components**: [Shadcn/UI](https://ui.shadcn.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+---
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+## 🛠️ Getting Started
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### 1. Prerequisite
+Ensure you have [Node.js](https://nodejs.org/) installed and a [Supabase](https://supabase.com/) project set up.
 
-## Clone and run locally
+### 2. Clone and Setup
+```bash
+git clone https://github.com/your-repo/mentorconnect.git
+cd mentorconnect
+```
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### 3. Environment Variables
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+```
 
-2. Create a Next.js app using the Supabase Starter template npx command
+### 4. Install Dependencies
+```bash
+npm install
+```
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+### 5. Run Development Server
+```bash
+npm run dev
+```
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+---
 
-3. Use `cd` to change into the app's directory
+## 📈 Matching Engine Usage
+Mentees can trigger a fresh match calculation from their profile page. The system will look at their academic background, preferred languages, and interests to suggest the top 5 mentors currently accepting new mentees.
 
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
-
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)

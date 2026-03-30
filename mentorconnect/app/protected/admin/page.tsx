@@ -1,60 +1,182 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminAllocationPanel } from "@/components/admin-allocation-panel";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function AdminPanelPage() {
+const HIGHEST_ADMIN_ROLE_ID = 7;
+
+type UserProfileRow = {
+  user_id: string;
+  full_name: string;
+  college_email: string;
+  department: string;
+};
+
+type UserRow = {
+  id: string;
+  email: string;
+};
+
+type MentorProfileRow = {
+  user_id: string;
+  max_mentees: number;
+  current_mentees_count: number;
+  is_accepting_mentees: boolean;
+};
+
+type ActiveMembershipRow = {
+  mentee_id: string;
+  group_id: string;
+  joined_at: string;
+};
+
+type MentorGroupRow = {
+  id: string;
+  mentor_id: string;
+};
+
+export default async function AdminPanelPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const { data: highestRole } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", user.id)
+    .eq("role_id", HIGHEST_ADMIN_ROLE_ID)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!highestRole) {
+    redirect("/protected");
+  }
+
+  const [{ data: allUsersData }, { data: usersTableData }, { data: mentorProfilesData }, { data: menteeRoleRows }] =
+    await Promise.all([
+      supabase
+        .from("user_profiles")
+        .select("user_id, full_name, college_email, department")
+        .order("full_name", { ascending: true }),
+      supabase
+        .from("users")
+        .select("id, email"),
+      supabase
+        .from("mentor_ug_pg_profiles")
+        .select("user_id, max_mentees, current_mentees_count, is_accepting_mentees"),
+      supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role_id", 1)
+        .eq("is_active", true),
+    ]);
+
+  const allUsers = (allUsersData || []) as UserProfileRow[];
+  const usersTableRows = (usersTableData || []) as UserRow[];
+  const mentorProfiles = (mentorProfilesData || []) as MentorProfileRow[];
+  const menteeIds = Array.from(new Set((menteeRoleRows || []).map((row) => row.user_id as string)));
+  const menteeIdSet = new Set(menteeIds);
+
+  const { data: activeMembershipsData } = await supabase
+    .from("mentor_group_members")
+    .select("mentee_id, group_id, joined_at")
+    .eq("status", "active");
+
+  const activeMemberships = (activeMembershipsData || []) as ActiveMembershipRow[];
+  const latestMembershipByMentee = new Map<string, ActiveMembershipRow>();
+
+  for (const membership of activeMemberships) {
+    const existing = latestMembershipByMentee.get(membership.mentee_id);
+    if (!existing || new Date(membership.joined_at).getTime() > new Date(existing.joined_at).getTime()) {
+      latestMembershipByMentee.set(membership.mentee_id, membership);
+    }
+  }
+
+  const groupIds = Array.from(new Set(activeMemberships.map((membership) => membership.group_id)));
+  const { data: groupsData } = groupIds.length
+    ? await supabase.from("mentor_groups").select("id, mentor_id").in("id", groupIds)
+    : { data: [] as MentorGroupRow[] };
+
+  const groupsById = new Map<string, MentorGroupRow>(
+    (((groupsData || []) as MentorGroupRow[]) || []).map((group) => [group.id, group]),
+  );
+
+  const mentorIdsFromGroups = Array.from(new Set((groupsData || []).map((group) => group.mentor_id as string)));
+  const allMentorIds = Array.from(new Set([...mentorProfiles.map((mentor) => mentor.user_id), ...mentorIdsFromGroups]));
+
+  const { data: mentorUserProfilesData } = allMentorIds.length
+    ? await supabase
+        .from("user_profiles")
+        .select("user_id, full_name, college_email, department")
+        .in("user_id", allMentorIds)
+    : { data: [] as UserProfileRow[] };
+
+  const mentorUserProfiles = (mentorUserProfilesData || []) as UserProfileRow[];
+  const mentorUserById = new Map(mentorUserProfiles.map((profile) => [profile.user_id, profile]));
+  const userProfileById = new Map(allUsers.map((profile) => [profile.user_id, profile]));
+  const userEmailById = new Map(usersTableRows.map((userRow) => [userRow.id, userRow.email]));
+
+  const mentees = menteeIds.map((menteeId) => {
+      const profile = userProfileById.get(menteeId);
+      const membership = latestMembershipByMentee.get(menteeId);
+      const mentorId = membership ? groupsById.get(membership.group_id)?.mentor_id ?? null : null;
+      const mentor = mentorId ? mentorUserById.get(mentorId) : null;
+
+      return {
+        id: menteeId,
+        name: profile?.full_name || "Profile incomplete",
+        email: profile?.college_email || userEmailById.get(menteeId) || "Unknown email",
+        department: profile?.department || "Not provided",
+        currentMentorId: mentorId,
+        currentMentorName: mentor?.full_name ?? null,
+        currentMentorEmail: mentor?.college_email ?? null,
+      };
+    });
+
+  const mentors = mentorProfiles.map((mentorProfile) => {
+    const userProfile = mentorUserById.get(mentorProfile.user_id);
+
+    return {
+      id: mentorProfile.user_id,
+      name: userProfile?.full_name || "Unknown mentor",
+      email: userProfile?.college_email || null,
+      department: userProfile?.department || null,
+      currentMenteesCount: mentorProfile.current_mentees_count,
+      maxMentees: mentorProfile.max_mentees,
+      isAcceptingMentees: mentorProfile.is_accepting_mentees,
+    };
+  });
+
+  const allUsersWithMentor = usersTableRows.map((userRow) => {
+    const profile = userProfileById.get(userRow.id);
+    const membership = latestMembershipByMentee.get(userRow.id);
+    const mentorId = membership ? groupsById.get(membership.group_id)?.mentor_id ?? null : null;
+    const mentor = mentorId ? mentorUserById.get(mentorId) : null;
+
+    return {
+      id: userRow.id,
+      name: profile?.full_name || "Profile incomplete",
+      email: profile?.college_email || userRow.email,
+      department: profile?.department || "Not provided",
+      assignedMentorName: mentor?.full_name ?? null,
+      assignedMentorEmail: mentor?.college_email ?? null,
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="space-y-6">
       <header>
         <h1 className="font-mono text-2xl font-semibold">Admin Panel</h1>
-        <p className="text-sm text-muted-foreground">Authority controls for escalations, performance, and emergency actions.</p>
+        <p className="text-sm text-muted-foreground">
+          Highest-role authority controls for mentor assignment and manual allocation overrides.
+        </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">Mentor Performance Ratings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="rounded-md border p-3">Ananya Singh · 4.8/5 · 23 mentees supported</div>
-            <div className="rounded-md border p-3">Rahul Sharma · 4.6/5 · 17 mentees supported</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">Escalation System</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="rounded-md border p-3">
-              <Badge variant="secondary">Open Escalation</Badge>
-              <p className="mt-2">Mental-health issue flagged for immediate review.</p>
-            </div>
-            <div className="rounded-md border p-3">SLA: response under 30 minutes for critical tags.</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">Emergency Identity Reveal</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="rounded-md border p-3">Available only for approved emergency workflows.</div>
-            <button type="button" className="rounded-md border px-3 py-2 text-xs text-muted-foreground">
-              Request reveal audit action
-            </button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-mono text-sm">Engagement Reports</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="rounded-md border p-3">Campus-wide mentor engagement: 79%</div>
-            <div className="rounded-md border p-3">Student follow-up completion: 68%</div>
-          </CardContent>
-        </Card>
-      </div>
+      <AdminAllocationPanel mentees={mentees} mentors={mentors} allUsers={allUsersWithMentor} />
     </div>
   );
 }

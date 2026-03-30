@@ -109,6 +109,8 @@ function SidebarNav({
 
 function ProfileMenu({ userEmail }: { userEmail?: string }) {
   const router = useRouter();
+  const profileMenuTriggerId = "profile-menu-trigger";
+  const profileMenuContentId = "profile-menu-content";
 
   const initials = useMemo(() => {
     if (!userEmail) return "MC";
@@ -126,6 +128,7 @@ function ProfileMenu({ userEmail }: { userEmail?: string }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          id={profileMenuTriggerId}
           type="button"
           className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-xs font-semibold text-foreground"
           aria-label="Open profile menu"
@@ -133,7 +136,12 @@ function ProfileMenu({ userEmail }: { userEmail?: string }) {
           {initials}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        id={profileMenuContentId}
+        align="end"
+        className="w-56"
+        aria-labelledby={profileMenuTriggerId}
+      >
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Signed in as
         </DropdownMenuLabel>

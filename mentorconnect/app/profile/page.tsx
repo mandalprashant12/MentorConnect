@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Building2, GraduationCap, Shield, Calendar } from "lucide-react";
+import { Mail, Building2, GraduationCap, Shield, Calendar, Users } from "lucide-react";
 import { TriggerMatchingButton } from "@/components/trigger-matching-button";
 
 function getAdminClient() {
@@ -131,6 +131,47 @@ export default async function ProfilePage() {
     .select("interest_tags ( name, category )")
     .eq("user_id", resolvedUserId);
 
+  // Fetch currently assigned mentor (if any)
+  const { data: activeMembership } = await supabase
+    .from("mentor_group_members")
+    .select("group_id, joined_at")
+    .eq("mentee_id", authUserId)
+    .eq("status", "active")
+    .order("joined_at", { ascending: false })
+    .maybeSingle();
+
+  let assignedMentor: {
+    name: string;
+    email: string | null;
+    department: string | null;
+    groupId: string;
+    joinedAt: string | null;
+  } | null = null;
+
+  if (activeMembership?.group_id) {
+    const { data: mentorGroup } = await supabase
+      .from("mentor_groups")
+      .select("mentor_id")
+      .eq("id", activeMembership.group_id)
+      .maybeSingle();
+
+    if (mentorGroup?.mentor_id) {
+      const { data: mentorProfile } = await supabase
+        .from("user_profiles")
+        .select("full_name, college_email, department")
+        .eq("user_id", mentorGroup.mentor_id)
+        .maybeSingle();
+
+      assignedMentor = {
+        name: mentorProfile?.full_name || "Unknown mentor",
+        email: mentorProfile?.college_email || null,
+        department: mentorProfile?.department || null,
+        groupId: activeMembership.group_id,
+        joinedAt: activeMembership.joined_at || null,
+      };
+    }
+  }
+
   const roles = (userRoles ?? []).map((r) => ({
     title: (r.roles as unknown as { display_title: string })?.display_title ?? "Unknown",
     is_active: r.is_active,
@@ -151,7 +192,46 @@ export default async function ProfilePage() {
     <div className="container mx-auto py-8 max-w-3xl space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
 
-      <TriggerMatchingButton userId={resolvedUserId} />
+      <TriggerMatchingButton />
+
+      {assignedMentor && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Assigned Mentor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">Name</span>
+              <span className="text-right font-medium">{assignedMentor.name}</span>
+            </div>
+            {assignedMentor.email && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Email</span>
+                <span className="text-right">{assignedMentor.email}</span>
+              </div>
+            )}
+            {assignedMentor.department && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Department</span>
+                <span className="text-right">{assignedMentor.department}</span>
+              </div>
+            )}
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">Group</span>
+              <span className="text-right">{assignedMentor.groupId}</span>
+            </div>
+            {assignedMentor.joinedAt && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Assigned on</span>
+                <span className="text-right">{new Date(assignedMentor.joinedAt).toLocaleString()}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* User Info Card */}
       <Card>

@@ -162,7 +162,7 @@ export async function ensureDirectThread(
     return existing as ChatThreadRow;
   }
 
-  throw new Error("Direct chat thread is not provisioned yet. Rerun the chat migration.");
+  throw new Error("THREAD_NOT_FOUND");
 }
 
 export async function ensureGroupThread(supabase: SupabaseServerClient, actorId: string, groupId: string) {
@@ -238,7 +238,12 @@ export async function loadDirectChatHub(supabase: SupabaseServerClient, userId: 
 
     for (const membership of membershipRows) {
       const menteeProfile = profiles.get(membership.mentee_id);
-      const thread = await ensureDirectThread(supabase, userId, userId, membership.mentee_id);
+      let thread;
+      try {
+        thread = await ensureDirectThread(supabase, userId, userId, membership.mentee_id);
+      } catch {
+        continue; // Skip if thread not provisioned yet
+      }
 
       directChats.push({
         href: `/protected/discussions/direct/${userId}/${membership.mentee_id}`,
@@ -301,7 +306,17 @@ export async function loadDirectChatHub(supabase: SupabaseServerClient, userId: 
     }
 
     const profiles = await getProfilesByUserIds(supabase, [group.mentor_id, userId]);
-    const thread = await ensureDirectThread(supabase, userId, group.mentor_id, userId);
+    let thread;
+    try {
+      thread = await ensureDirectThread(supabase, userId, group.mentor_id, userId);
+    } catch {
+      return {
+        userName,
+        userRoleLabel: getRoleLabel(roleIds),
+        directChats: [],
+        emptyState: "Your direct chat is being provisioned. Please refresh in a moment.",
+      };
+    }
 
     return {
       userName,
@@ -468,7 +483,43 @@ export async function loadDirectThreadPage(
     throw new Error("You do not have access to this direct chat.");
   }
 
-  const thread = await ensureDirectThread(supabase, userId, mentorId, menteeId);
+  let thread: ChatThreadRow;
+  try {
+    thread = await ensureDirectThread(supabase, userId, mentorId, menteeId);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message !== "THREAD_NOT_FOUND") {
+      throw err;
+    }
+
+    // Auto-provision via SECURITY DEFINER RPC to bypass RLS.
+    const { data: threadId, error: rpcError } = await supabase.rpc(
+      "provision_direct_chat_thread",
+      { p_mentor_id: mentorId, p_mentee_id: menteeId }
+    );
+
+    if (rpcError || !threadId) {
+      throw new Error(
+        `Could not start a conversation with this mentor. ${rpcError?.message ?? "Please try again later."}`
+      );
+    }
+
+    // Re-fetch the full thread row now that it exists.
+    const { data: newThread, error: fetchError } = await supabase
+      .from("chat_threads")
+      .select("id, thread_type, mentor_id, mentee_id, group_id, title")
+      .eq("id", threadId)
+      .single();
+
+    if (fetchError || !newThread) {
+      throw new Error(
+        `Chat thread was created but could not be loaded. ${fetchError?.message ?? "Please refresh."}`
+      );
+    }
+
+    thread = newThread as ChatThreadRow;
+  }
+
   const profiles = await getProfilesByUserIds(supabase, [mentorId, menteeId]);
 
   const { data: messageRows, error: messageError } = await supabase

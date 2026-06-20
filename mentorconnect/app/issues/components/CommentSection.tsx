@@ -17,7 +17,7 @@ interface Comment {
   is_internal_note: boolean;
 }
 
-export function CommentSection({ issueId, isMentor = false }: { issueId: string, isMentor?: boolean }) {
+export function CommentSection({ issueId, isAdmin = false }: { issueId: string, isAdmin?: boolean }) {
   const supabase = createClient();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -148,7 +148,7 @@ export function CommentSection({ issueId, isMentor = false }: { issueId: string,
               disabled={loading}
             />
             
-            {isMentor && (
+            {isAdmin && (
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="internal-note" 

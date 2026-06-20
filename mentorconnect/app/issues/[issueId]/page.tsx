@@ -25,8 +25,8 @@ export default async function IssuePage({
     notFound();
   }
 
-  // Check if current user is a mentor
-  let isMentor = false;
+  // Check if current user is an admin (role_id = 7)
+  let isAdmin = false;
   if (user) {
     const { data: roles } = await supabase
       .from("user_roles")
@@ -34,13 +34,13 @@ export default async function IssuePage({
       .eq("user_id", user.id)
       .eq("is_active", true);
     
-    if (roles && roles.some(r => r.role_id >= 2)) {
-      isMentor = true;
+    if (roles && roles.some(r => r.role_id === 7)) {
+      isAdmin = true;
     }
   }
 
   const isCreator = user?.id === issue.creator_id;
-  const canResolve = (isMentor || isCreator) && issue.status !== "resolved" && issue.status !== "closed";
+  const canResolve = isAdmin && issue.status !== "resolved" && issue.status !== "closed";
 
   // Fetch resolution if resolved
   let resolution = null;
@@ -100,7 +100,7 @@ export default async function IssuePage({
         <div className="mt-10">
           <h2 className="font-mono text-lg font-semibold mb-4">Discussion Thread</h2>
           <Suspense fallback={<p className="text-sm text-muted-foreground">Loading comments...</p>}>
-            <CommentSection issueId={issueId} isMentor={isMentor} />
+            <CommentSection issueId={issueId} isAdmin={isAdmin} />
           </Suspense>
         </div>
       </div>

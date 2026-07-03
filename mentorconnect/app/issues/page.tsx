@@ -146,9 +146,22 @@ export default async function IssuesPage(props: {
 
       {filteredIssues.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {filteredIssues.map((issue) => (
-            <IssueCard key={issue.id} issue={{ ...issue, userVote: userVotes[issue.id] || null }} />
-          ))}
+          {filteredIssues.map((issue) => {
+            const cat = Array.isArray(issue.issue_categories) 
+              ? issue.issue_categories[0] 
+              : issue.issue_categories;
+              
+            return (
+              <IssueCard 
+                key={issue.id} 
+                issue={{ 
+                  ...issue, 
+                  issue_categories: cat, 
+                  userVote: userVotes[issue.id] || null 
+                } as any} 
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg border-dashed">

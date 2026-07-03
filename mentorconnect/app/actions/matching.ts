@@ -180,27 +180,25 @@ async function computeBestMentorSuggestions(supabase: SupabaseServerClient, ment
   const interestsByUserId = getInterestsByUserId((interestRowsData || []) as UserTagRow[]);
 
   const mentors: MentorProfile[] = mentorRows
-    .map((row) => {
+    .reduce<MentorProfile[]>((acc, row) => {
       const mentorId = row.user_id as string;
       const mentorRole = highestRoleByUserId.get(mentorId) ?? 0;
 
-      if (mentorRole === HIGHEST_ADMIN_ROLE_ID) {
-        return null;
+      if (mentorRole !== HIGHEST_ADMIN_ROLE_ID) {
+        acc.push({
+          id: mentorId,
+          academic_background: row.academic_background,
+          mentoring_domains: row.mentoring_domains || [],
+          max_mentees: row.max_mentees,
+          current_mentees_count: row.current_mentees_count,
+          is_accepting_mentees: row.is_accepting_mentees,
+          department: mentorGeneralById.get(mentorId)?.department || null,
+          languages: languageByUserId.get(mentorId) || [],
+          interests: interestsByUserId.get(mentorId) || [],
+        });
       }
-
-      return {
-        id: mentorId,
-        academic_background: row.academic_background,
-        mentoring_domains: row.mentoring_domains || [],
-        max_mentees: row.max_mentees,
-        current_mentees_count: row.current_mentees_count,
-        is_accepting_mentees: row.is_accepting_mentees,
-        department: mentorGeneralById.get(mentorId)?.department || null,
-        languages: languageByUserId.get(mentorId) || [],
-        interests: interestsByUserId.get(mentorId) || [],
-      };
-    })
-    .filter((mentor): mentor is MentorProfile => Boolean(mentor));
+      return acc;
+    }, []);
 
   const suggestions: BestMentorSuggestion[] = [];
 
@@ -679,10 +677,14 @@ export async function runMatchingAlgorithm() {
     const lang = item as UserLanguageRow;
     if (!lang.user_id) continue;
     const prof = mentorsMap.get(lang.user_id);
-    if (prof && lang.languages?.code) {
+    if (prof) {
+      if (Array.isArray(lang.languages)) {
+        if (lang.languages[0]?.code) {
+          prof.languages.push(lang.languages[0].code);
+        }
+      } else if (lang.languages?.code) {
         prof.languages.push(lang.languages.code);
-    } else if (prof && Array.isArray(lang.languages) && lang.languages[0]?.code) {
-        prof.languages.push(lang.languages[0].code);
+      }
     }
   }
 

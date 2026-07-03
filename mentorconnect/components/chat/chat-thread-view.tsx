@@ -86,7 +86,10 @@ export function ChatThreadView({
             )}
           </div>
 
-          <form action={sendChatMessage} className="space-y-3 rounded-2xl border bg-background p-3">
+          <form action={async (formData) => {
+            "use server";
+            await sendChatMessage(formData);
+          }} className="space-y-3 rounded-2xl border bg-background p-3">
             <input type="hidden" name="thread_id" value={threadId} />
             <input type="hidden" name="thread_type" value={threadType} />
             <Textarea name="message_body" rows={3} placeholder="Write a message..." className="resize-none" />

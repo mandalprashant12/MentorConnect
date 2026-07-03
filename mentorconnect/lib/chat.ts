@@ -203,144 +203,65 @@ export async function loadDirectChatHub(supabase: SupabaseServerClient, userId: 
   const roleIds = await getActiveRoleIds(supabase, userId);
   const userName = await getUserName(supabase, userId);
 
-  if (roleIds.some((roleId) => MENTOR_ROLE_IDS.has(roleId))) {
-    const { data: groupsData, error: groupsError } = await supabase
-      .from("mentor_groups")
-      .select("id, mentor_id, group_name")
-      .eq("mentor_id", userId)
-      .eq("is_active", true);
+  const isMentor = roleIds.some((roleId) => MENTOR_ROLE_IDS.has(roleId));
+  const isMentee = roleIds.includes(ROLE_MENTEE);
 
-    if (groupsError) {
-      throw new Error(`Failed to load mentor groups: ${groupsError.message}`);
-    }
-
-    const groupRows = (groupsData || []) as MentorGroupRow[];
-    const groupIds = groupRows.map((group) => group.id);
-
-    const { data: membershipData, error: membershipError } = groupIds.length
-      ? await supabase
-          .from("mentor_group_members")
-          .select("group_id, mentee_id, joined_at")
-          .in("group_id", groupIds)
-          .eq("status", "active")
-      : { data: [] as ActiveMembershipRow[] | null, error: null };
-
-    if (membershipError) {
-      throw new Error(`Failed to load group members: ${membershipError.message}`);
-    }
-
-    const membershipRows = (membershipData || []) as ActiveMembershipRow[];
-    const menteeIds = Array.from(new Set(membershipRows.map((row) => row.mentee_id)));
-    const profiles = await getProfilesByUserIds(supabase, menteeIds);
-    const mentorProfiles = await getProfilesByUserIds(supabase, [userId]);
-
-    const directChats: ChatPreview[] = [];
-
-    for (const membership of membershipRows) {
-      const menteeProfile = profiles.get(membership.mentee_id);
-      let thread;
-      try {
-        thread = await ensureDirectThread(supabase, userId, userId, membership.mentee_id);
-      } catch {
-        continue; // Skip if thread not provisioned yet
-      }
-
-      directChats.push({
-        href: `/protected/discussions/direct/${userId}/${membership.mentee_id}`,
-        threadId: thread.id,
-        title: getDisplayName(menteeProfile, "Mentee"),
-        subtitle: `${getDisplayName(mentorProfiles.get(userId), "Mentor")} · 1:1 direct chat`,
-        badge: "Direct",
-        lastMessageAt: null,
-        participantCount: 2,
-      });
-    }
-
+  if (!isMentor && !isMentee) {
     return {
       userName,
       userRoleLabel: getRoleLabel(roleIds),
-      directChats,
-      emptyState: "No active mentee chats yet.",
+      directChats: [],
+      emptyState: "This account does not have direct chat access.",
     };
   }
 
-  if (roleIds.includes(ROLE_MENTEE)) {
-    const { data: membership, error: membershipError } = await supabase
-      .from("mentor_group_members")
-      .select("group_id, joined_at")
-      .eq("mentee_id", userId)
-      .eq("status", "active")
-      .order("joined_at", { ascending: false })
-      .maybeSingle();
+  // Load ALL direct threads where the user is a participant, sorted by newest first
+  const { data: threadRows, error: threadsError } = await supabase
+    .from("chat_threads")
+    .select("id, mentor_id, mentee_id, updated_at")
+    .eq("thread_type", "direct")
+    .or(`mentor_id.eq.${userId},mentee_id.eq.${userId}`)
+    .order("updated_at", { ascending: false });
 
-    if (membershipError) {
-      throw new Error(`Failed to load mentor allocation: ${membershipError.message}`);
-    }
+  if (threadsError) {
+    throw new Error(`Failed to load direct chats: ${threadsError.message}`);
+  }
 
-    if (!membership?.group_id) {
-      return {
-        userName,
-        userRoleLabel: getRoleLabel(roleIds),
-        directChats: [],
-        emptyState: "You will see your mentor chat here after allocation.",
-      };
-    }
+  const threads = (threadRows || []) as { id: string; mentor_id: string; mentee_id: string; updated_at: string }[];
 
-    const { data: group, error: groupError } = await supabase
-      .from("mentor_groups")
-      .select("id, mentor_id, group_name")
-      .eq("id", membership.group_id)
-      .maybeSingle();
+  // Collect all participant IDs for profile lookup
+  const participantIds = new Set<string>();
+  for (const t of threads) {
+    participantIds.add(t.mentor_id);
+    participantIds.add(t.mentee_id);
+  }
+  const profiles = await getProfilesByUserIds(supabase, Array.from(participantIds));
 
-    if (groupError) {
-      throw new Error(`Failed to load mentor group: ${groupError.message}`);
-    }
-
-    if (!group) {
-      return {
-        userName,
-        userRoleLabel: getRoleLabel(roleIds),
-        directChats: [],
-        emptyState: "Your mentor group could not be found.",
-      };
-    }
-
-    const profiles = await getProfilesByUserIds(supabase, [group.mentor_id, userId]);
-    let thread;
-    try {
-      thread = await ensureDirectThread(supabase, userId, group.mentor_id, userId);
-    } catch {
-      return {
-        userName,
-        userRoleLabel: getRoleLabel(roleIds),
-        directChats: [],
-        emptyState: "Your direct chat is being provisioned. Please refresh in a moment.",
-      };
-    }
+  const directChats: ChatPreview[] = threads.map((thread) => {
+    const isUserMentor = thread.mentor_id === userId;
+    const otherUserId = isUserMentor ? thread.mentee_id : thread.mentor_id;
+    const otherRole = isUserMentor ? "Mentee" : "Mentor";
+    const otherProfile = profiles.get(otherUserId);
+    const myRole = isUserMentor ? "Mentor" : "Mentee";
 
     return {
-      userName,
-      userRoleLabel: getRoleLabel(roleIds),
-      directChats: [
-        {
-          href: `/protected/discussions/direct/${group.mentor_id}/${userId}`,
-          threadId: thread.id,
-          title: getDisplayName(profiles.get(group.mentor_id), "Your mentor"),
-          subtitle: `${group.group_name || "Assigned mentor"} · 1:1 direct chat`,
-          badge: "Direct",
-          lastMessageAt: null,
-          participantCount: 2,
-        },
-      ],
-      emptyState: "No active mentor chat yet.",
+      href: `/protected/discussions/direct/${thread.mentor_id}/${thread.mentee_id}`,
+      threadId: thread.id,
+      title: getDisplayName(otherProfile, otherRole),
+      subtitle: `${myRole} · 1:1 direct chat`,
+      badge: "Direct",
+      lastMessageAt: thread.updated_at,
+      participantCount: 2,
     };
-  }
+  });
 
   return {
     userName,
     userRoleLabel: getRoleLabel(roleIds),
-    directChats: [],
-    emptyState: "This account does not have direct chat access.",
+    directChats,
+    emptyState: isMentor
+      ? "No direct chats yet."
+      : "You will see your mentor chats here after you message a mentor.",
   };
 }
 

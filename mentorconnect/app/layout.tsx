@@ -9,8 +9,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "MentorConnect — Find Your Mentor",
-  description: "MentorConnect bridges students with mentors for academic help, career guidance, and personal growth.",
+  title: "CounselConnect — Find Your Mentor",
+  description: "CounselConnect bridges students with mentors for academic help, career guidance, and personal growth.",
 };
 
 const geistSans = Geist({

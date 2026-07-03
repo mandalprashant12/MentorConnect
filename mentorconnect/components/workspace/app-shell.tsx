@@ -148,7 +148,7 @@ function ProfileMenu({ userEmail }: { userEmail?: string }) {
           Signed in as
         </DropdownMenuLabel>
         <DropdownMenuLabel className="truncate font-medium">
-          {userEmail ?? "mentorconnect@local"}
+          {userEmail ?? "CounselConnect@local"}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -186,7 +186,7 @@ export function AppShell({ children, userEmail, showAdmin = true }: AppShellProp
           </Button>
 
           <Link href="/protected" className="font-mono text-sm font-semibold tracking-tight">
-            MentorConnect
+            CounselConnect
           </Link>
 
           <div className="relative ml-1 hidden max-w-xl flex-1 md:block">

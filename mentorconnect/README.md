@@ -1,6 +1,6 @@
-# 🎓 MentorConnect
+# 🎓 CounselConnect
 
-**MentorConnect** is a comprehensive, smart mentoring platform designed to bridge the gap between junior students and experienced mentors (peers, seniors, and professionals). Built with a focus on personalized matching and efficient issue resolution, it ensures every student gets the guidance they need to succeed academically and personally.
+**CounselConnect** is a comprehensive, smart mentoring platform designed to bridge the gap between junior students and experienced mentors (peers, seniors, and professionals). Built with a focus on personalized matching and efficient issue resolution, it ensures every student gets the guidance they need to succeed academically and personally.
 
 ## 🚀 Key Features
 
@@ -48,8 +48,8 @@ Ensure you have [Node.js](https://nodejs.org/) installed and a [Supabase](https:
 
 ### 2. Clone and Setup
 ```bash
-git clone https://github.com/your-repo/mentorconnect.git
-cd mentorconnect
+git clone https://github.com/your-repo/CounselConnect.git
+cd CounselConnect
 ```
 
 ### 3. Environment Variables

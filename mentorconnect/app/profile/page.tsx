@@ -117,7 +117,7 @@ export default async function ProfilePage() {
       {
         user_id: authUserId,
         full_name: fallbackName,
-        college_email: user.email ?? `${user.id}@mentorconnect.local`,
+        college_email: user.email ?? `${user.id}@CounselConnect.local`,
         department: "Not Specified",
         year_or_designation: "Not Specified",
         short_bio: null,

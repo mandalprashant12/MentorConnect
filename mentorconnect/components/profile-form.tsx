@@ -198,7 +198,7 @@ export default function ProfileForm({ role, onBack }: ProfileFormProps) {
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
         <h2 className="form-title">Profile Created!</h2>
         <p className="form-subtitle">
-          Welcome to MentorConnect. You&apos;re all set as a <strong>{role}</strong>.
+          Welcome to CounselConnect. You&apos;re all set as a <strong>{role}</strong>.
         </p>
         <a href="/protected" className="button" style={{ display: "inline-block", marginTop: "24px", textDecoration: "none" }}>
           Go to Dashboard

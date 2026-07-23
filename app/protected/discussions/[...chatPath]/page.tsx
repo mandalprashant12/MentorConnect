@@ -25,7 +25,12 @@ export default async function DiscussionThreadPage({
     redirect("/auth/login");
   }
 
-  const thread = await loadDirectThreadPage(supabase, user.id, mentorId, menteeId);
+  let thread;
+  try {
+    thread = await loadDirectThreadPage(supabase, user.id, mentorId, menteeId);
+  } catch (error) {
+    redirect("/protected/discussions");
+  }
 
   return (
     <ChatThreadView

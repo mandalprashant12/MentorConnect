@@ -24,7 +24,12 @@ export default async function GroupThreadPage({
     redirect("/auth/login");
   }
 
-  const thread = await loadGroupThreadPage(supabase, user.id, groupId);
+  let thread;
+  try {
+    thread = await loadGroupThreadPage(supabase, user.id, groupId);
+  } catch (error) {
+    redirect("/protected/mentor-rooms");
+  }
 
   return (
     <ChatThreadView
